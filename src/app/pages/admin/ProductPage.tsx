@@ -19,7 +19,8 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing } from '@/constants/theme';
 import Header from '../../layouts/Header';
-import NavigationMenu from '../../layouts/nevigationMenu';
+import BottomNavigation from '../../layouts/BottomNavigation';
+import { useNotification } from '@/components/NotificationProvider';
 // @ts-ignore
 import axios from 'axios/dist/axios.js';
 
@@ -102,7 +103,7 @@ export default function ProductPageScreen() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const router = useRouter();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { notifySuccess, notifyError } = useNotification();
   const insets = useSafeAreaInsets();
   
   // State for dynamic products initialized from cache
@@ -128,6 +129,7 @@ export default function ProductPageScreen() {
 
   // Edit form states
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editManageStock, setEditManageStock] = useState(false);
   const [editStockQuantity, setEditStockQuantity] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -158,6 +160,7 @@ export default function ProductPageScreen() {
       setProducts(data);
     } catch (err: any) {
       console.error(err);
+      notifyError('Failed to load products. Check your connection.');
       if (cachedProducts.length === 0) {
         setError('Failed to load products. Check your connection.');
       }
@@ -183,10 +186,6 @@ export default function ProductPageScreen() {
       fetchProducts(false);
     }
   }, []);
-
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
 
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages) return;
@@ -232,7 +231,8 @@ export default function ProductPageScreen() {
 
   const openEditModal = (product: Product) => {
     setActionsProduct(product);
-    setEditStockQuantity(product.stock_quantity !== null ? product.stock_quantity.toString() : '0');
+    setEditManageStock(product.manage_stock);
+    setEditStockQuantity(product.stock_quantity !== null ? product.stock_quantity.toString() : '');
     setSaveError(null);
     setSaving(false);
     setIsEditOpen(true);
@@ -256,14 +256,28 @@ export default function ProductPageScreen() {
       setSaving(true);
       setSaveError(null);
 
-      const newQty = editStockQuantity ? parseInt(editStockQuantity, 10) : 0;
-      const newStatus = newQty > 0 ? 'instock' : 'outofstock';
+      let newQty: number | null = null;
+      let newStatus = actionsProduct.stock_status;
+
+      if (editManageStock) {
+        // Validate: stock count must be > 0 when manage_stock is enabled
+        const parsed = editStockQuantity ? parseInt(editStockQuantity, 10) : 0;
+        if (isNaN(parsed) || parsed <= 0) {
+          setSaveError('Stock count must be greater than 0.');
+          notifyError('Stock count must be greater than 0.');
+          setSaving(false);
+          return;
+        }
+        newQty = parsed;
+        newStatus = newQty > 0 ? 'instock' : 'outofstock';
+      }
 
       // Build updated product payload matching WooCommerce standard
       const updatedProductPayload = {
         ...actionsProduct,
-        stock_quantity: newQty,
-        stock_status: newStatus
+        manage_stock: editManageStock,
+        stock_quantity: editManageStock ? newQty : null,
+        stock_status: editManageStock ? newStatus : actionsProduct.stock_status,
       };
 
       // POST to the webhook endpoint
@@ -280,9 +294,15 @@ export default function ProductPageScreen() {
       setProducts(updatedProducts);
       setIsEditOpen(false);
       setActionsProduct(null);
+      if (editManageStock) {
+        notifySuccess(`Stock updated to ${newQty} units`, 'Product Updated');
+      } else {
+        notifySuccess('Stock management disabled', 'Product Updated');
+      }
     } catch (err: any) {
       console.error(err);
       setSaveError('Failed to save changes. Please try again.');
+      notifyError('Failed to save changes. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -291,6 +311,7 @@ export default function ProductPageScreen() {
   const handleDeleteProduct = () => {
     if (!actionsProduct) return;
 
+    const deletedName = actionsProduct.name;
     const updatedProducts = products.filter(p => p.id !== actionsProduct.id);
     cachedProducts = updatedProducts;
     setProducts(updatedProducts);
@@ -303,6 +324,7 @@ export default function ProductPageScreen() {
 
     setIsDeleteConfirmOpen(false);
     setActionsProduct(null);
+    notifySuccess(`"${deletedName}" has been removed`, 'Product Deleted');
   };
 
   // Filter products by search and category
@@ -382,7 +404,7 @@ export default function ProductPageScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['left', 'right']}>
       <View style={styles.flexWrapper}>
-        <Header pageName="Products" onMenuPress={toggleMenu} />
+        <Header pageName="Products" showMenu={false} />
 
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -498,7 +520,7 @@ export default function ProductPageScreen() {
                     },
                   ],
                 }]}
-                contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + Spacing.four }] as any}
+                contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 80 }] as any}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
                   <RefreshControl
@@ -649,8 +671,7 @@ export default function ProductPageScreen() {
           </View>
         )}
 
-        {/* Global Navigation Menu */}
-        <NavigationMenu isOpen={isMenuOpen} onClose={toggleMenu} />
+        <BottomNavigation activeTab="Products" />
 
         {/* Product Details Modal */}
         <Modal
@@ -969,26 +990,53 @@ export default function ProductPageScreen() {
                   </View>
                 )}
 
-                {/* Stock Quantity Input (The ONLY editable field) */}
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>New Stock Count</Text>
-                  <TextInput
-                    style={[
-                      styles.textInput, 
-                      { 
-                        color: colors.text, 
-                        backgroundColor: colors.backgroundElement, 
-                        borderColor: colors.backgroundSelected 
-                      }
-                    ]}
-                    value={editStockQuantity}
-                    onChangeText={setEditStockQuantity}
-                    keyboardType="numeric"
-                    placeholder="Enter units count"
-                    placeholderTextColor={colors.textSecondary}
-                    editable={!saving}
-                  />
-                </View>
+                {/* Manage Stock Checkbox */}
+                <TouchableOpacity
+                  style={styles.checkboxRow}
+                  activeOpacity={0.7}
+                  onPress={() => !saving && setEditManageStock(!editManageStock)}
+                  disabled={saving}
+                >
+                  <View style={[
+                    styles.checkbox,
+                    { borderColor: editManageStock ? '#4F46E5' : colors.backgroundSelected,
+                      backgroundColor: editManageStock ? '#4F46E5' : 'transparent' }
+                  ]}>
+                    {editManageStock && (
+                      <Text style={styles.checkboxTick}>✓</Text>
+                    )}
+                  </View>
+                  <Text style={[styles.checkboxLabel, { color: colors.text }]}>
+                    Manage Stock
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Stock Quantity Input — only visible when manage_stock is checked */}
+                {editManageStock && (
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>New Stock Count</Text>
+                    <TextInput
+                      style={[
+                        styles.textInput, 
+                        { 
+                          color: colors.text, 
+                          backgroundColor: colors.backgroundElement, 
+                          borderColor: colors.backgroundSelected 
+                        }
+                      ]}
+                      value={editStockQuantity}
+                      onChangeText={(text) => {
+                        // Only allow numeric input
+                        const filtered = text.replace(/[^0-9]/g, '');
+                        setEditStockQuantity(filtered);
+                      }}
+                      keyboardType="numeric"
+                      placeholder="Enter units count (min 1)"
+                      placeholderTextColor={colors.textSecondary}
+                      editable={!saving}
+                    />
+                  </View>
+                )}
 
                 {/* Save Button */}
                 <TouchableOpacity
@@ -1595,5 +1643,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    marginBottom: 4,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  checkboxTick: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

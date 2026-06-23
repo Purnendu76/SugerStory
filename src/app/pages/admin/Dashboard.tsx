@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing } from '@/constants/theme';
 import Header from '../../layouts/Header';
-import NavigationMenu from '../../layouts/nevigationMenu';
+import BottomNavigation from '../../layouts/BottomNavigation';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -33,8 +33,6 @@ export default function AdminDashboardScreen() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const router = useRouter();
-  
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const insets = useSafeAreaInsets();
 
   // Animations
@@ -48,10 +46,6 @@ export default function AdminDashboardScreen() {
       useNativeDriver: true,
     }).start();
   }, []);
-
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
 
   // Mock telemetry data
   const systemMetrics = [
@@ -81,7 +75,7 @@ export default function AdminDashboardScreen() {
     <View style={[styles.safeArea, { backgroundColor: colors.background }] as any}>
       <View style={styles.flexWrapper}>
         {/* Reusable Header */}
-        <Header pageName="Dashboard" onMenuPress={toggleMenu} />
+        <Header pageName="Dashboard" showMenu={false} />
 
         <Animated.ScrollView
           style={[styles.scrollView, {
@@ -97,7 +91,7 @@ export default function AdminDashboardScreen() {
           }]}
           contentContainerStyle={[
             styles.container,
-            { paddingBottom: insets.bottom + 24 },
+            { paddingBottom: insets.bottom + 80 },
           ] as any}
           showsVerticalScrollIndicator={false}
         >
@@ -235,8 +229,7 @@ export default function AdminDashboardScreen() {
           </View>
         </Animated.ScrollView>
 
-        {/* Global Navigation Menu overlay component */}
-        <NavigationMenu isOpen={isMenuOpen} onClose={toggleMenu} />
+        <BottomNavigation activeTab="Home" />
       </View>
     </View>
   );

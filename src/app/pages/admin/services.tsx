@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing } from '@/constants/theme';
 import Header from '../../layouts/Header';
-import NavigationMenu from '../../layouts/nevigationMenu';
+import BottomNavigation from '../../layouts/BottomNavigation';
 
 interface Service {
   id: number;
@@ -18,12 +18,7 @@ export default function AdminServicesScreen() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const router = useRouter();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const insets = useSafeAreaInsets();
-
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
 
   const [services, setServices] = useState<Service[]>([
     { id: 1, name: 'REST Gateway API', category: 'Backend Server', status: 'Online', color: '#10B981' },
@@ -60,9 +55,9 @@ export default function AdminServicesScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['left', 'right']}>
       <View style={styles.flexWrapper}>
-        <Header pageName="Services" onMenuPress={toggleMenu} />
+        <Header pageName="Services" showMenu={false} />
 
-        <ScrollView contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + Spacing.four }] as any}>
+        <ScrollView contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 80 }] as any}>
           <View style={styles.servicesList}>
             {services.map((service) => (
               <TouchableOpacity
@@ -98,12 +93,12 @@ export default function AdminServicesScreen() {
           </View>
         </ScrollView>
 
-        {/* Global Navigation Menu overlay component */}
-        <NavigationMenu isOpen={isMenuOpen} onClose={toggleMenu} />
+        <BottomNavigation activeTab="Services" />
       </View>
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   safeArea: {

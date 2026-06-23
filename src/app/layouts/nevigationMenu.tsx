@@ -25,6 +25,7 @@ export const menuItems: MenuItem[] = [
   { name: 'Admin Home', route: '/pages/admin/Home', char: 'H', color: '#4F46E5' },
   { name: 'Services Manager', route: '/pages/admin/services', char: 'S', color: '#10B981' },
   { name: 'Product Catalog', route: '/pages/admin/ProductPage', char: 'P', color: '#EC4899' },
+  { name: 'Orders Manager', route: '/pages/admin/Orders', char: 'O', color: '#3B82F6' },
   { name: 'About Admin', route: '/pages/admin/About', char: 'I', color: '#F59E0B' },
 ];
 

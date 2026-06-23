@@ -7,8 +7,10 @@ import {
   StyleSheet,
   Dimensions,
   StatusBar,
+  useColorScheme,
 } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
+import { NotificationProvider } from '@/components/NotificationProvider';
 
 // Prevent the native splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -18,6 +20,8 @@ const SPLASH_DURATION = 3000; // 3 seconds
 export default function RootLayout() {
   const [showSplash, setShowSplash] = useState(true);
   const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
+  const scheme = useColorScheme();
+  const isDark = scheme === 'dark';
 
   // Hide the native splash once our layout is mounted
   const onLayoutReady = useCallback(async () => {
@@ -42,23 +46,33 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle="light-content" backgroundColor="#3D2314" />
-      <View style={styles.container} onLayout={onLayoutReady}>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-          }}
-        />
-        {showSplash && (
-          <View style={styles.splashOverlay}>
-            <Image
-              source={require('../../assets/images/splash.png')}
-              style={styles.splashImage}
-              resizeMode="cover"
-            />
-          </View>
-        )}
-      </View>
+      <NotificationProvider>
+        <StatusBar barStyle="light-content" backgroundColor="#3D2314" />
+        <View style={[styles.container, { backgroundColor: isDark ? '#090A0C' : '#F8FAFC' }]} onLayout={onLayoutReady}>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: isDark ? '#090A0C' : '#F8FAFC' },
+            }}
+          >
+            <Stack.Screen name="pages/admin/Home" options={{ animation: 'none' }} />
+            <Stack.Screen name="pages/admin/ProductPage" options={{ animation: 'none' }} />
+            <Stack.Screen name="pages/admin/Orders" options={{ animation: 'none' }} />
+            <Stack.Screen name="pages/admin/services" options={{ animation: 'none' }} />
+            <Stack.Screen name="pages/admin/About" options={{ animation: 'none' }} />
+            <Stack.Screen name="pages/admin/Dashboard" options={{ animation: 'none' }} />
+          </Stack>
+          {showSplash && (
+            <View style={styles.splashOverlay}>
+              <Image
+                source={require('../../assets/images/splash.png')}
+                style={styles.splashImage}
+                resizeMode="cover"
+              />
+            </View>
+          )}
+        </View>
+      </NotificationProvider>
     </SafeAreaProvider>
   );
 }

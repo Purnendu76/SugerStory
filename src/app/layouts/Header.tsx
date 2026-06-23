@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, useColorScheme, Image } from 'react-native';
+import { StyleSheet, Text, View, useColorScheme, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing } from '@/constants/theme';
 
@@ -9,7 +9,7 @@ interface HeaderProps {
   showMenu?: boolean;
 }
 
-export default function Header({ pageName, onMenuPress, showMenu = true }: HeaderProps) {
+export default function Header({ pageName }: HeaderProps) {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const insets = useSafeAreaInsets();
@@ -36,27 +36,12 @@ export default function Header({ pageName, onMenuPress, showMenu = true }: Heade
         <Text style={[styles.logoBrand, { color: colors.text }] as any}>Sugar Story</Text>
       </View>
 
-      {/* Page Title */}
+      {/* Page Title (Far Right) */}
       <View style={styles.titleSection}>
         <Text style={[styles.pageTitle, { color: colors.textSecondary }] as any}>
           {pageName}
         </Text>
       </View>
-
-      {/* Menu / Navigation Icon */}
-      {showMenu && onMenuPress ? (
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={onMenuPress}
-          style={[styles.menuButton, { backgroundColor: colors.backgroundElement }] as any}
-        >
-          <View style={[styles.menuLine, { backgroundColor: colors.text }]} />
-          <View style={[styles.menuLine, { backgroundColor: colors.text }]} />
-          <View style={[styles.menuLine, { backgroundColor: colors.text }]} />
-        </TouchableOpacity>
-      ) : (
-        <View style={styles.menuPlaceholder} />
-      )}
     </View>
   );
 }
@@ -85,8 +70,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   titleSection: {
-    flex: 1,
-    alignItems: 'center',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   pageTitle: {
     fontSize: 14,
@@ -94,20 +79,5 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
-  menuButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 3,
-  },
-  menuLine: {
-    width: 16,
-    height: 2,
-    borderRadius: 1,
-  },
-  menuPlaceholder: {
-    width: 36,
-  },
 });
+

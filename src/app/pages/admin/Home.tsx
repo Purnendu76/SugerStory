@@ -1,21 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing } from '@/constants/theme';
 import Header from '../../layouts/Header';
-import NavigationMenu from '../../layouts/nevigationMenu';
+import BottomNavigation from '../../layouts/BottomNavigation';
 
 export default function AdminHomeScreen() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const router = useRouter();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const insets = useSafeAreaInsets();
-
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
 
   const stats = [
     { label: 'Active Users', value: '1,284', color: '#4F46E5' },
@@ -26,9 +21,9 @@ export default function AdminHomeScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['left', 'right']}>
       <View style={styles.flexWrapper}>
-        <Header pageName="Workspace" onMenuPress={toggleMenu} />
+        <Header pageName="Workspace" showMenu={false} />
 
-        <ScrollView contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + Spacing.four }] as any}>
+        <ScrollView contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 80 }] as any}>
           <View style={[styles.banner, { backgroundColor: '#4F46E5' }] as any}>
             <Text style={styles.bannerSubtitle}>ADMIN PORTAL</Text>
             <Text style={styles.bannerTitle}>Workspace Manager</Text>
@@ -52,6 +47,18 @@ export default function AdminHomeScreen() {
               <Text style={styles.actionButtonText}>Open Live Dashboard</Text>
             </TouchableOpacity>
             <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: '#3B82F6' }] as any}
+              onPress={() => router.push('/pages/admin/Orders')}
+            >
+              <Text style={styles.actionButtonText}>Orders Manager</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: '#EC4899' }] as any}
+              onPress={() => router.push('/pages/admin/ProductPage')}
+            >
+              <Text style={styles.actionButtonText}>Product Catalog</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: '#10B981' }] as any}
               onPress={() => router.push('/pages/admin/services')}
             >
@@ -73,12 +80,12 @@ export default function AdminHomeScreen() {
           </TouchableOpacity>
         </ScrollView>
 
-        {/* Global Navigation Menu overlay component */}
-        <NavigationMenu isOpen={isMenuOpen} onClose={toggleMenu} />
+        <BottomNavigation activeTab="Home" />
       </View>
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   safeArea: {

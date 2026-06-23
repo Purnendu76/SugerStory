@@ -1,21 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing } from '@/constants/theme';
 import Header from '../../layouts/Header';
-import NavigationMenu from '../../layouts/nevigationMenu';
+import BottomNavigation from '../../layouts/BottomNavigation';
 
 export default function AdminAboutScreen() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const router = useRouter();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const insets = useSafeAreaInsets();
-
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
 
   const details = [
     { label: 'OS / Framework', value: 'Expo SDK 56' },
@@ -28,9 +23,9 @@ export default function AdminAboutScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['left', 'right']}>
       <View style={styles.flexWrapper}>
-        <Header pageName="System Info" onMenuPress={toggleMenu} />
+        <Header pageName="System Info" showMenu={false} />
 
-        <ScrollView contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + Spacing.four }] as any}>
+        <ScrollView contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 80 }] as any}>
           <View style={[styles.detailsCard, { backgroundColor: colors.backgroundElement }] as any}>
             {details.map((item, idx) => (
               <View key={idx} style={[styles.detailRow, idx < details.length - 1 && { borderBottomColor: colors.backgroundSelected, borderBottomWidth: 1 }] as any}>
@@ -63,12 +58,12 @@ export default function AdminAboutScreen() {
           </View>
         </ScrollView>
 
-        {/* Global Navigation Menu overlay component */}
-        <NavigationMenu isOpen={isMenuOpen} onClose={toggleMenu} />
+        <BottomNavigation activeTab="About" />
       </View>
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   safeArea: {
