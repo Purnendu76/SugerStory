@@ -18,6 +18,7 @@ import {
 } from "react-native-safe-area-context";
 // @ts-ignore
 import axios from "axios/dist/axios.js";
+import { cachedOrders } from "../Orders";
 
 // ──────────────────────────────────────────────
 // Interfaces
@@ -85,6 +86,17 @@ interface Order {
   line_items: LineItem[];
 }
 
+const STATUS_OPTIONS = [
+  "cancelled",
+  "completed",
+  "failed",
+  "on-hold",
+  "pending",
+  "processing",
+  "refunded",
+  "trash",
+];
+
 export default function OrderDetailsScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -104,9 +116,13 @@ export default function OrderDetailsScreen() {
     primaryLight: isDark ? "#1E1B4B" : "#EEF2FF",
   };
 
-  const [order, setOrder] = useState<Order | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cachedOrder = id ? cachedOrders.find((o) => o.id.toString() === id) : null;
+  const [order, setOrder] = useState<Order | null>(cachedOrder || null);
+  const [loading, setLoading] = useState(!cachedOrder);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<string>(cachedOrder ? cachedOrder.status : "");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const fetchOrderDetails = async (isSilent = false) => {
     try {
@@ -121,6 +137,7 @@ export default function OrderDetailsScreen() {
 
       if (matched) {
         setOrder(matched);
+        setSelectedStatus(matched.status);
       } else {
         notifyError(`Order #${id} not found in database`);
       }
@@ -135,7 +152,7 @@ export default function OrderDetailsScreen() {
 
   useEffect(() => {
     if (id) {
-      fetchOrderDetails();
+      fetchOrderDetails(!cachedOrder);
     }
   }, [id]);
 
@@ -254,6 +271,39 @@ export default function OrderDetailsScreen() {
     } catch (err) {
       console.error(err);
       notifyError("Unable to open Google Maps");
+    }
+  };
+
+  const handleUpdateStatus = async () => {
+    if (!order) return;
+    if (selectedStatus === order.status) return;
+
+    try {
+      setSaving(true);
+      const response = await axios.post(
+        "https://n8n.srv917960.hstgr.cloud/webhook/update-order-status",
+        {
+          order_id: order.id,
+          order_status: selectedStatus,
+        }
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        notifySuccess("Order status updated successfully");
+        const cachedIdx = cachedOrders.findIndex((o) => o.id.toString() === id);
+        if (cachedIdx !== -1) {
+          cachedOrders[cachedIdx].status = selectedStatus;
+        }
+        await fetchOrderDetails(true);
+        setDropdownOpen(false);
+      } else {
+        notifyError("Failed to update order status");
+      }
+    } catch (err) {
+      console.error(err);
+      notifyError("Failed to update order status");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -491,6 +541,119 @@ export default function OrderDetailsScreen() {
               </Text>
             </View>
           </View>
+        </View>
+
+        {/* Update Status Card */}
+        <View
+          style={[
+            styles.sectionCard,
+            {
+              backgroundColor: appColors.cardBg,
+              borderColor: appColors.border,
+            },
+          ]}
+        >
+          <Text style={[styles.sectionHeading, { color: appColors.textSec }]}>
+            UPDATE ORDER STATUS
+          </Text>
+
+          <View style={styles.dropdownWrapper}>
+            <TouchableOpacity
+              style={[
+                styles.dropdownHeader,
+                {
+                  borderColor: appColors.border,
+                  backgroundColor: isDark ? "#1E293B" : "#F1F5F9",
+                },
+              ]}
+              onPress={() => setDropdownOpen(!dropdownOpen)}
+            >
+              <View style={styles.dropdownHeaderLeft}>
+                <Text style={[styles.dropdownChevronIcon, { color: appColors.text }]}>▼</Text>
+                <Text style={[styles.dropdownSelectedText, { color: appColors.text }]}>
+                  {selectedStatus}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {dropdownOpen && (
+              <View
+                style={[
+                  styles.dropdownList,
+                  {
+                    borderColor: appColors.border,
+                    backgroundColor: isDark ? "#0F172A" : "#F8FAFC",
+                  },
+                ]}
+              >
+                {STATUS_OPTIONS.map((statusOption) => {
+                  const isSelected = selectedStatus === statusOption;
+                  return (
+                    <TouchableOpacity
+                      key={statusOption}
+                      style={[
+                        styles.dropdownItem,
+                        {
+                          backgroundColor: isSelected
+                            ? (isDark ? "#1E293B" : "#E2E8F0")
+                            : (isDark ? "#1E2025" : "#F1F5F9"),
+                        },
+                      ]}
+                      onPress={() => {
+                        setSelectedStatus(statusOption);
+                        setDropdownOpen(false);
+                      }}
+                    >
+                      <Text style={[styles.dropdownItemChevron, { color: isSelected ? appColors.primary : appColors.textSec }]}>▼</Text>
+                      <Text
+                        style={[
+                          styles.dropdownItemText,
+                          {
+                            color: isSelected ? appColors.primary : appColors.text,
+                            fontWeight: isSelected ? "800" : "500",
+                          },
+                        ]}
+                      >
+                        {statusOption}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.saveButton,
+              {
+                backgroundColor:
+                  selectedStatus === order.status
+                    ? (isDark ? "#1E293B" : "#E2E8F0")
+                    : appColors.primary,
+              },
+            ]}
+            onPress={handleUpdateStatus}
+            disabled={selectedStatus === order.status || saving}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <Text
+                style={[
+                  styles.saveButtonText,
+                  {
+                    color:
+                      selectedStatus === order.status
+                        ? appColors.textSec
+                        : "#ffffff",
+                  },
+                ]}
+              >
+                Save Status
+              </Text>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* Customer Profile Card */}
@@ -1102,5 +1265,66 @@ const styles = StyleSheet.create({
   mapButtonText: {
     fontSize: 12,
     fontWeight: "700",
+  },
+  dropdownWrapper: {
+    marginVertical: 4,
+    position: "relative",
+    zIndex: 100,
+  },
+  dropdownHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderRadius: 10,
+  },
+  dropdownHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  dropdownChevronIcon: {
+    fontSize: 14,
+    opacity: 0.7,
+  },
+  dropdownSelectedText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  dropdownList: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderRadius: 10,
+    overflow: "hidden",
+    padding: 8,
+    gap: 6,
+  },
+  dropdownItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 12,
+  },
+  dropdownItemChevron: {
+    fontSize: 14,
+    opacity: 0.6,
+  },
+  dropdownItemText: {
+    fontSize: 14,
+  },
+  saveButton: {
+    height: 48,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+  },
+  saveButtonText: {
+    fontWeight: "800",
+    fontSize: 14,
   },
 });

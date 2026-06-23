@@ -107,8 +107,8 @@ interface Order {
 // Caching
 // ──────────────────────────────────────────────
 
-let cachedOrders: Order[] = [];
-let fetchPromise: Promise<Order[]> | null = null;
+export let cachedOrders: Order[] = [];
+export let fetchPromise: Promise<Order[]> | null = null;
 
 const startPreFetch = (): Promise<Order[]> => {
   if (fetchPromise) return fetchPromise;
