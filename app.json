@@ -35,7 +35,14 @@
         }
       ],
       "expo-font",
-      "expo-notifications"
+      [
+        "expo-notifications",
+        {
+          "sounds": [
+            "./assets/sounds/mixkit_happy_bells_notification_937.wav"
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

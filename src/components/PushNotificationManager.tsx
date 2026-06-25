@@ -19,6 +19,7 @@ Notifications.setNotificationHandler({
 
 async function registerForPushNotificationsAsync() {
   let token;
+  let newlyGranted = false;
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
@@ -26,6 +27,13 @@ async function registerForPushNotificationsAsync() {
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
+    });
+    await Notifications.setNotificationChannelAsync('order-alerts', {
+      name: 'Order Alerts',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+      sound: 'mixkit_happy_bells_notification_937.wav',
     });
   }
 
@@ -35,17 +43,20 @@ async function registerForPushNotificationsAsync() {
     if (existingStatus !== 'granted') {
       const { status } = await Notifications.requestPermissionsAsync();
       finalStatus = status;
+      if (status === 'granted') {
+        newlyGranted = true;
+      }
     }
     if (finalStatus !== 'granted') {
       console.warn('Failed to get push token for push notification!');
-      return;
+      return null;
     }
     const projectId =
       Constants?.expoConfig?.extra?.eas?.projectId ??
       Constants?.easConfig?.projectId;
     if (!projectId) {
       console.warn('Project ID not found in app config.');
-      return;
+      return null;
     }
     try {
       token = (
@@ -60,7 +71,7 @@ async function registerForPushNotificationsAsync() {
     console.log('Must use physical device for Push Notifications');
   }
 
-  return token;
+  return { token, newlyGranted };
 }
 
 export default function PushNotificationManager() {
@@ -70,17 +81,19 @@ export default function PushNotificationManager() {
   const responseListener = useRef<Notifications.Subscription | null>(null);
 
   useEffect(() => {
-    registerForPushNotificationsAsync().then((token) => {
-      if (token) {
-        console.log('Firebase Expo Push Token:', token);
+    registerForPushNotificationsAsync().then((res) => {
+      if (res && res.token && res.newlyGranted) {
+        console.log('Firebase Expo Push Token (Newly Granted):', res.token);
         
         // Register token with your n8n middleware
         axios.post('https://n8n.srv917960.hstgr.cloud/webhook/register-token', {
-          token,
+          token: res.token,
           platform: Platform.OS,
         }).catch(err => {
           console.warn('Failed to register push token with backend:', err);
         });
+      } else if (res && res.token) {
+        console.log('Firebase Expo Push Token (Already Granted):', res.token);
       }
     });
 
@@ -95,11 +108,22 @@ export default function PushNotificationManager() {
       }
     });
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+    const handleNotificationResponse = (response: Notifications.NotificationResponse) => {
       console.log('User interacted with push notification:', response);
       const data = response.notification.request.content.data;
       if (data && data.orderId) {
-        router.push(`/pages/admin/orders/${data.orderId}`);
+        setTimeout(() => {
+          router.push(`/pages/admin/orders/${data.orderId}`);
+        }, 500);
+      }
+    };
+
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
+
+    // Handle notifications that opened the app from a closed (killed) state
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) {
+        handleNotificationResponse(response);
       }
     });
 
