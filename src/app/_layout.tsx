@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { NotificationProvider } from '@/components/NotificationProvider';
+import PushNotificationManager from '@/components/PushNotificationManager';
 
 // Prevent the native splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -47,6 +48,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <NotificationProvider>
+        <PushNotificationManager />
         <StatusBar barStyle="light-content" backgroundColor="#3D2314" />
         <View style={[styles.container, { backgroundColor: isDark ? '#090A0C' : '#F8FAFC' }]} onLayout={onLayoutReady}>
           <Stack

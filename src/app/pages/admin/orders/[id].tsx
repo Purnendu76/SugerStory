@@ -16,9 +16,9 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-// @ts-ignore
-import axios from "axios/dist/axios.js";
+import axios from 'axios';
 import { cachedOrders } from "../Orders";
+
 
 // ──────────────────────────────────────────────
 // Interfaces

@@ -41,3 +41,6 @@ example
 # generated native folders
 /ios
 /android
+
+# Firebase Private Keys
+sugar-story-82084-firebase-adminsdk-fbsvc-73b99ec0bc.json

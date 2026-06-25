@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Sugar Story",
-    "slug": "sugar-story",
+    "slug": "sugar-story-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -13,6 +13,7 @@
     },
     "android": {
       "package": "com.sugarstory.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#3D2314",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -33,7 +34,8 @@
           "image": "./assets/images/transparent.png"
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -42,7 +44,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "a6a05fc1-fcac-4173-839e-e0e9c4f4f21f"
+        "projectId": "f9f18812-3955-45da-9d1e-a15fa7fff2b6"
       }
     },
     "owner": "purnendu007"

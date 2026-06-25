@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "979008071663",
+    "project_id": "sugar-story-82084",
+    "storage_bucket": "sugar-story-82084.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:979008071663:android:a6e6d857cd473b16a4f81a",
+        "android_client_info": {
+          "package_name": "com.sugarstory.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqbhwFUk2lBbWut-PAHACaqge9mgbyc-I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

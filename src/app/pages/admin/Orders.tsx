@@ -21,8 +21,8 @@ import { Colors, Spacing } from '@/constants/theme';
 import Header from '../../layouts/Header';
 import BottomNavigation from '../../layouts/BottomNavigation';
 import { useNotification } from '@/components/NotificationProvider';
-// @ts-ignore
-import axios from 'axios/dist/axios.js';
+import axios from 'axios';
+
 
 const { width: screenWidth } = Dimensions.get('window');
 
